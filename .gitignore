@@ -2,3 +2,4 @@ aplicacion/config.py
 /aplicacion/__pycache__
 aplicacion/config.py
 /sql/backups
+sql/discordflix.db

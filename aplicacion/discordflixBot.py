@@ -113,15 +113,17 @@ async def _puntua(ctx, *args):
 			txt = f'**{ctx.author.display_name}** ha puntuado la película con **{args[0]}/10**.\n'
 			txt = '¡Gracias por aportar a DiscordFlix!'
 			await enviarMensaje(ctx, txt)
-		elif votoAnterior == args[0]:
-			txt = f':information_source: Tu calificación ya era **{votoAnterior}/10**.'
+			await utilidades.reaccionaSegunNota(ctx.message, args[0])
+		elif votoAnterior == int(args[0]):
+			txt = f':information_source: Tu calificación ya era **{votoAnterior}/10**.\n'
 			txt += 'No se han hecho cambios en CineScore :clapper:'
 			await enviarMensaje(ctx, txt)
 		else:
-			txt = f':arrows_counterclockwise: **Calificación actualizada**'
-			txt += f'**{ctx.author.display_name}** ha cambiado su nota de **{votoAnterior}/10** a **{args[0]}/10**.'
+			txt = f':arrows_counterclockwise: **Calificación actualizada**\n'
+			txt += f'**{ctx.author.display_name}** ha cambiado su nota de **{votoAnterior}/10** a **{args[0]}/10**.\n'
 			txt += 'La nueva puntuación ya cuenta para la media :clapper:'
 			await enviarMensaje(ctx, txt)
+			await utilidades.reaccionaSegunNota(ctx.message, args[0])
 
 
 # Comando /pelicula, para crear una película

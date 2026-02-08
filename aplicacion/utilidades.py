@@ -189,3 +189,18 @@ async def gestionaMensaje(ctx, txt, numPag, maxPag, message):
         await mensaje.add_reaction(config.pag_anterior)
     if numPag != maxPag:
         await mensaje.add_reaction(config.pag_siguiente)
+
+async def reaccionaSegunNota(message, nota):
+    emoji = ''
+    match nota:
+        case '1' | '2' | '3' | '4':
+            emoji = '😬'
+        case '5' | '6':
+            emoji = '🤔'
+        case '7' | '8':
+            emoji = '😄'
+        case '9' | '10':
+            emoji = '🔥'
+
+    if emoji != ''
+        await message.add_reaction(emoji)
