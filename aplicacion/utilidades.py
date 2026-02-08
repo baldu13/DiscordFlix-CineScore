@@ -193,7 +193,7 @@ async def gestionaMensaje(ctx, txt, numPag, maxPag, message):
 async def reaccionaSegunNota(message, nota):
     emoji = ''
     match nota:
-        case '1' | '2' | '3' | '4':
+        case '0' | '1' | '2' | '3' | '4':
             emoji = '😬'
         case '5' | '6':
             emoji = '🤔'
