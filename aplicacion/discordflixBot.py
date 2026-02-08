@@ -67,14 +67,14 @@ async def _ayuda(ctx, *args):
 	txt += f'* {encuadrar}{prefijo}ranking{encuadrar} Mostrar el ranking de todas películas, por nota media.\n'
 	txt += f'* {encuadrar}{prefijo}miranking{encuadrar} Mostrar un ranking de las mejores y peores películas según valoración personal.\n'
 	txt += f'* {encuadrar}{prefijo}ultima{encuadrar} Mostrar información de la última película vista.\n'
-	txt += f'* {encuadrar}{prefijo}puntua [0-10]{encuadrar} Cuando haya una votación abierta, permite aportar tu valoración de la misma.\n'
+	txt += f'* {encuadrar}{prefijo}puntua [0-10]{encuadrar} Cuando haya un periodo de calificación abierto, permite aportar tu valoración de la misma.\n'
 	txt += f'* {encuadrar}{prefijo}info [NombrePelicula]{encuadrar} Muestra la información de una película.\n'
 	txt2 = f'### Comandos de administración:\n'
 	txt2 += f'* {encuadrar}{prefijo}pelicula [Sesion] "[NombrePelicula]" "[URL Portada]" "<fecha>"{encuadrar} Crea una película para la sesión indicada, con el nombre indicado y opcionalmente para la fecha indicada, sino por defecto para la fecha actual. Por ejemplo: _{prefijo}pelicula 10 "Mi película" "https:www.urlImagen.com/img.jpg" "01-01-2026"_\n'
 	txt2 += f'* {encuadrar}{prefijo}abrir <NombrePelicula>{encuadrar} Abre el periodo de calificación para la película designada, o la última si no se indica nada.\n'
 	txt2 += f'* {encuadrar}{prefijo}cerrar{encuadrar} Cierra el periodo de calificación activo, en caso de haberlo.\n'
 	txt2 += f'* {encuadrar}{prefijo}editar [NombrePeliculaAnterior] [Sesion] "[NombrePelicula]" "[URL Portada]" "[fecha]"{encuadrar} Actualiza los datos de una película.\n'
-	txt2 += f'* {encuadrar}{prefijo}eliminar [NombrePelicula]{encuadrar} Elimina la película y todos sus votos.\n'
+	txt2 += f'* {encuadrar}{prefijo}eliminar [NombrePelicula]{encuadrar} Elimina la película y todas sus calificaciones.\n'
 	await enviarMensaje(ctx, txt)
 	if ctx.author.id in usuarios_admin:
 		await ctx.author.send(txt2)
@@ -94,7 +94,7 @@ async def _info(ctx, *args):
 			await enviarMensaje(ctx, f'La película **{nombrePeli}** no existe.')
 
 
-# Comando /voto, para registrar un voto
+# Comando /puntua, para registrar una calificación
 @bot.command(name='puntua')
 async def _puntua(ctx, *args):
 	if len(args) != 1:
@@ -104,14 +104,24 @@ async def _puntua(ctx, *args):
 	elif '.' in args[0] or ',' in args[0]:
 		await enviarMensaje(ctx, f'Por favor, introduce un número sin decimales. Uso: **{prefijo}puntua [0-10]**')
 	elif bd.votacionActual() == -1:
-		await enviarMensaje(ctx, f'No hay ninguna encuesta activa.')
+		await enviarMensaje(ctx, f'No hay periodo de calificación activo.')
 	else:
 		# Falta registrar el voto como tal
 		votoAnterior = bd.registraVoto(bd.votacionActual(), ctx.author.id, args[0])
 		if votoAnterior == -1:
-			await enviarMensaje(ctx, f'Registrada calificación **{args[0]}/10** de **{ctx.author.display_name}**. ¡Gracias por tu aporte!')
+			txt = ':clapper: **Calificación registrada**\n'
+			txt = f'**{ctx.author.display_name}** ha puntuado la película con **{args[0]}/10**.\n'
+			txt = '¡Gracias por aportar a DiscordFlix!'
+			await enviarMensaje(ctx, txt)
+		elif votoAnterior == args[0]:
+			txt = f':information_source: Tu calificación ya era **{votoAnterior}/10**.'
+			txt += 'No se han hecho cambios en CineScore :clapper:'
+			await enviarMensaje(ctx, txt)
 		else:
-			await enviarMensaje(ctx, f'Se ha modificado tu calificación anterior de **{votoAnterior}/10** a **{args[0]}/10**.')
+			txt = f':arrows_counterclockwise: **Calificación actualizada**'
+			txt += f'**{ctx.author.display_name}** ha cambiado su nota de **{votoAnterior}/10** a **{args[0]}/10**.'
+			txt += 'La nueva puntuación ya cuenta para la media :clapper:'
+			await enviarMensaje(ctx, txt)
 
 
 # Comando /pelicula, para crear una película
@@ -149,11 +159,11 @@ async def _abrir(ctx, *args):
 			await enviarMensaje(ctx, f'No hay ninguna película con el nombre **"{nombrePeli}"**.')
 		else:
 			bd.setVotacionActiva(bd.idPeliculaNombre(nombrePeli))
-			txt = '## :clapper: **Nueva votación abierta en CineScore**\n'
+			txt = '## :clapper: **Periodo de calificación abierto en CineScore**\n'
 			await enviarMensaje(ctx, txt)
 			await enviarMensaje(ctx, f'{bd.urlImg(nombrePeli)}')
 			txt = f'- :projector: Película: **___{nombrePeli}___**\n'
-			txt += f'- :pencil: Vota del **0 al 10** usando {encuadrar}{prefijo}puntua [0-10]{encuadrar}\n'
+			txt += f'- :pencil: Califica del **0 al 10** usando {encuadrar}{prefijo}puntua [0-10]{encuadrar}\n'
 			txt += f'- :popcorn: ¡Gracias por participar en DiscordFlix!'
 			await enviarMensaje(ctx, txt)
 		# Borramos el mensaje original que nos ha invocado para limpiar
@@ -168,11 +178,11 @@ async def _abrir(ctx, *args):
 async def _cerrar(ctx, *args):
 	if ctx.author.id in usuarios_admin:
 		if bd.votacionActual() == -1:
-			await enviarMensaje(ctx, f'Actualmente no hay ninguna votación activa para cerrar.')
+			await enviarMensaje(ctx, f'Actualmente no hay ningún periodo de calificación activo.')
 		else:
 			nombrePeli = bd.nombrePeliculaId(bd.votacionActual())
 			bd.setVotacionActiva(-1)
-			txt = '## :clapper: **Votación cerrada en CineScore**\n'
+			txt = '## :clapper: **Periodo de calificación cerrado en CineScore**\n'
 			txt += '- :popcorn: ¡Gracias por participar!\n'
 			votos = bd.recuperaVotos(nombrePeli)
 			nota = 0
@@ -181,7 +191,7 @@ async def _cerrar(ctx, *args):
 				txt += f'- :projector: La película **{nombrePeli}** ha obtenido una valoración de...\n'
 				txt += f'|| ## **{nota}/10** {utilidades.pintaEstrellas(float(nota))}||'
 			else:
-				txt += f'- :projector: La película **{nombrePeli}** no ha recibido ningún voto...'
+				txt += f'- :projector: La película **{nombrePeli}** no ha recibido ninguna calificación...'
 			await enviarMensaje(ctx, txt)
 		# Borramos el mensaje original que nos ha invocado para limpiar
 		await ctx.message.delete()
@@ -265,7 +275,7 @@ async def _eliminar(ctx, *args):
 				await enviarMensaje(ctx, f'La película **{peli}** no existe.')
 				return
 			votos = bd.recuperaVotos(peli)
-			await enviarMensaje(ctx, f'Película **{peli}** eliminada junto con sus **{len(votos)}** votos.')
+			await enviarMensaje(ctx, f'Película **{peli}** eliminada junto con sus **{len(votos)}** calificaciones.')
 		else:
 			await enviarMensaje(ctx, f'Uso: {encuadrar}{prefijo}eliminar [NombrePelicula]{encuadrar}')
 	else:
