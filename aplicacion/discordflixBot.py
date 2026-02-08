@@ -156,6 +156,8 @@ async def _abrir(ctx, *args):
 			txt += f'- :pencil: Vota del **0 al 10** usando {encuadrar}{prefijo}puntua [0-10]{encuadrar}\n'
 			txt += f'- :popcorn: ¡Gracias por participar en DiscordFlix!'
 			await enviarMensaje(ctx, txt)
+		# Borramos el mensaje original que nos ha invocado para limpiar
+		await ctx.message.delete()
 	else:
 		print(f'El usuario {ctx.author.display_name}:{ctx.author.id} ha intentado ejecutar un comando de administración, pero no tiene los permisos necesarios.')
 		await enviarMensaje(ctx, msg_usuario_no_admin)
@@ -181,6 +183,8 @@ async def _cerrar(ctx, *args):
 			else:
 				txt += f'- :projector: La película **{nombrePeli}** no ha recibido ningún voto...'
 			await enviarMensaje(ctx, txt)
+		# Borramos el mensaje original que nos ha invocado para limpiar
+		await ctx.message.delete()
 	else:
 		print(f'El usuario {ctx.author.display_name}:{ctx.author.id} ha intentado ejecutar un comando de administración, pero no tiene los permisos necesarios.')
 		await enviarMensaje(ctx, msg_usuario_no_admin)
