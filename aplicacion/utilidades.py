@@ -202,5 +202,5 @@ async def reaccionaSegunNota(message, nota):
         case '9' | '10':
             emoji = '🔥'
 
-    if emoji != ''
+    if emoji != '':
         await message.add_reaction(emoji)
