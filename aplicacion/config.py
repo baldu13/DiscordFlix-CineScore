@@ -26,3 +26,7 @@ tam_pagina = 10
 # Emojis para página anterior y posterior
 pag_anterior = "⬅️"
 pag_siguiente = "➡️"
+
+# Restringir las calificaciones a usuarios que posean un rol específico
+calificacionRestrictiva = True
+rolCalificador = 1021090746205479065
