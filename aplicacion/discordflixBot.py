@@ -67,7 +67,7 @@ async def _ayuda(ctx, *args):
 	txt += f'* {encuadrar}{prefijo}ranking{encuadrar} Mostrar el ranking de todas películas, por nota media.\n'
 	txt += f'* {encuadrar}{prefijo}miranking{encuadrar} Mostrar un ranking de las mejores y peores películas según valoración personal.\n'
 	txt += f'* {encuadrar}{prefijo}ultima{encuadrar} Mostrar información de la última película vista.\n'
-	txt += f'* {encuadrar}{prefijo}puntua [0-10]{encuadrar} Cuando haya un periodo de calificación abierto, permite aportar tu valoración de la misma.\n'
+	txt += f'* {encuadrar}{prefijo}puntua [0-10]{encuadrar} Cuando haya un periodo de calificación abierto, permite aportar tu valoración de la misma (se permite hasta un decimal, por ejemplo {prefijo}puntua 7.5).\n'
 	txt += f'* {encuadrar}{prefijo}info [NombrePelicula]{encuadrar} Muestra la información de una película.\n'
 	txt2 = f'### Comandos de administración:\n'
 	txt2 += f'* {encuadrar}{prefijo}pelicula [Sesion] "[NombrePelicula]" "[URL Portada]" "<fecha>"{encuadrar} Crea una película para la sesión indicada, con el nombre indicado y opcionalmente para la fecha indicada, sino por defecto para la fecha actual. Por ejemplo: _{prefijo}pelicula 10 "Mi película" "https:www.urlImagen.com/img.jpg" "01-01-2026"_\n'
@@ -97,33 +97,44 @@ async def _info(ctx, *args):
 # Comando /puntua, para registrar una calificación
 @bot.command(name='puntua')
 async def _puntua(ctx, *args):
+	calificacion = args[0].replace(',', '.')
+	decimales = 0
+	if "." in calificacion:
+		decimales = len(calificacion.split(".")[1])
 	if len(args) != 1:
 		await enviarMensaje(ctx, f'Uso: **{prefijo}puntua [0-10]**')
-	elif not args[0].isnumeric() or int(args[0])<0 or int(args[0])>10:
-		await enviarMensaje(ctx, f'Calificación incorrecta. Uso: **{prefijo}puntua [0-10]**')
-	elif '.' in args[0] or ',' in args[0]:
-		await enviarMensaje(ctx, f'Por favor, introduce un número sin decimales. Uso: **{prefijo}puntua [0-10]**')
-	elif bd.votacionActual() == -1:
-		await enviarMensaje(ctx, f'No hay periodo de calificación activo.')
+	elif not utilidades.esNumero(calificacion) or float(calificacion)<0 or float(calificacion)>10 or decimales > 1:
+		await enviarMensaje(ctx, f'Calificación incorrecta. Uso: **{prefijo}puntua [0-10] (máximo un decimal)**')
+	elif float(bd.votacionActual()) == float(-1):
+		txt = ':information_source: Ahora mismo no hay ninguna calificación abierta en CineScore.\n'
+		txt += f'Solo puedes usar {encuadrar}{prefijo}puntua{encuadrar} justo después de las sesiones de DiscordFlix.'
+		await enviarMensaje(ctx, txt)
 	else:
-		# Falta registrar el voto como tal
-		votoAnterior = bd.registraVoto(bd.votacionActual(), ctx.author.id, args[0])
-		if votoAnterior == -1:
+		rolCalificador = ctx.guild.get_role(config.rolCalificador)
+		if rolCalificador and config.calificacionRestrictiva and not any(role.id == config.rolCalificador for role in ctx.author.roles):
+			# El usuario no puede calificar
+			txt = f':no_entry: No puedes calificar esta película porque no tienes el rol {rolCalificador.mention}.\n'
+			txt += f'Más información con {encuadrar}!pass{encuadrar}'
+			await enviarMensaje(ctx, txt)
+			return
+		# Registrar la calificación como tal
+		votoAnterior = bd.registraVoto(bd.votacionActual(), ctx.author.id, calificacion)
+		if float(votoAnterior) == float(-1):
 			txt = ':clapper: **Calificación registrada**\n'
-			txt = f'**{ctx.author.display_name}** ha puntuado la película con **{args[0]}/10**.\n'
+			txt = f'**{ctx.author.display_name}** ha puntuado la película con **{utilidades.notaSobreDiez(calificacion)}**.\n'
 			txt = '¡Gracias por aportar a DiscordFlix!'
 			await enviarMensaje(ctx, txt)
-			await utilidades.reaccionaSegunNota(ctx.message, args[0])
-		elif votoAnterior == int(args[0]):
-			txt = f':information_source: Tu calificación ya era **{votoAnterior}/10**.\n'
+			await utilidades.reaccionaSegunNota(ctx.message, calificacion)
+		elif float(votoAnterior) == float(calificacion):
+			txt = f':information_source: Tu calificación ya era **{utilidades.notaSobreDiez(votoAnterior)}**.\n'
 			txt += 'No se han hecho cambios en CineScore :clapper:'
 			await enviarMensaje(ctx, txt)
 		else:
 			txt = f':arrows_counterclockwise: **Calificación actualizada**\n'
-			txt += f'**{ctx.author.display_name}** ha cambiado su nota de **{votoAnterior}/10** a **{args[0]}/10**.\n'
+			txt += f'**{ctx.author.display_name}** ha cambiado su nota de **{utilidades.notaSobreDiez(votoAnterior)}** a **{utilidades.notaSobreDiez(calificacion)}**.\n'
 			txt += 'La nueva puntuación ya cuenta para la media :clapper:'
 			await enviarMensaje(ctx, txt)
-			await utilidades.reaccionaSegunNota(ctx.message, args[0])
+			await utilidades.reaccionaSegunNota(ctx.message, calificacion)
 
 
 # Comando /pelicula, para crear una película
@@ -180,7 +191,7 @@ async def _abrir(ctx, *args):
 async def _cerrar(ctx, *args):
 	if ctx.author.id in usuarios_admin:
 		if bd.votacionActual() == -1:
-			await enviarMensaje(ctx, f'Actualmente no hay ningún periodo de calificación activo.')
+			await enviarMensaje(ctx, f':information_source: No hay ninguna calificación abierta en CineScore, así que no hay nada que cerrar. ')
 		else:
 			nombrePeli = bd.nombrePeliculaId(bd.votacionActual())
 			bd.setVotacionActiva(-1)
@@ -191,7 +202,7 @@ async def _cerrar(ctx, *args):
 			if len(votos) > 0:
 				nota = utilidades.media(votos)
 				txt += f'- :projector: La película **{nombrePeli}** ha obtenido una valoración de...\n'
-				txt += f'|| ## **{nota}/10** {utilidades.pintaEstrellas(float(nota))}||'
+				txt += f'|| ## **{utilidades.notaSobreDiez(nota)}** {utilidades.pintaEstrellas(float(nota))}||'
 			else:
 				txt += f'- :projector: La película **{nombrePeli}** no ha recibido ninguna calificación...'
 			await enviarMensaje(ctx, txt)

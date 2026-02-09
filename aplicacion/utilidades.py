@@ -80,7 +80,7 @@ async def pintaInfo(ctx, peli):
     votos = bd.recuperaVotos(peli[1])
     nota = 0
     if len(votos) > 0:
-        nota = f'{media(votos)}/10'
+        nota = f'{notaSobreDiez(media(votos))}'
     else:
         nota = 'Sin valoración'
     txt = f'## :bar_chart: Resultado de la sesión DiscordFlix #{peli[3]} del [{fchNumAStr(peli[2])}]\n'
@@ -97,7 +97,7 @@ async def pintaListado(ctx, totalPeliculas, inicio = 0, message = None):
     fin = inicio + min(len(totalPeliculas)-int(inicio), config.tam_pagina)
     numPag = math.ceil(fin / config.tam_pagina)
     maxPag = math.ceil(len(totalPeliculas) / config.tam_pagina)
-    txt = "## Lista de películas vistas en DiscordFlix:\n"
+    txt = "## :clapper: Historial de sesiones de DiscordFlix\n"
     for i in range(inicio, fin):
         peli = totalPeliculas[i]
         txt += f'* Sesión #{peli[3]} del [{fchNumAStr(peli[2])}] **"{peli[1]}"**\n'
@@ -111,7 +111,7 @@ async def pintaMiRanking(ctx, votosUsuario, autor, inicio = 0, message = None):
     txt = f'## Este es el ranking de películas vistas y valoradas por {autor.mention}: \n'
     for i in range(inicio, fin):
         voto = votosUsuario[i]
-        txt += f'{i+1}. {pintaEstrellas(float(voto[1]))} **"{bd.nombrePeliculaId(voto[0])}"**, con una nota de **{str(int(voto[1]))}/10**\n'
+        txt += f'{i+1}. {pintaEstrellas(float(voto[1]))} **"{bd.nombrePeliculaId(voto[0])}"**, con una nota de **{notaSobreDiez(str(int(voto[1])))}**\n'
     await gestionaMensaje(ctx, txt, numPag, maxPag, message)
 
 
@@ -147,7 +147,7 @@ async def pintaRanking(ctx, pelis, estilo = 'Total', inicio = 0, message = None)
         numPag = math.ceil(fin / config.tam_pagina)
         maxPag = math.ceil(len(ordenadas) / config.tam_pagina)
         for i in range(inicio, fin):
-            valoracion = "Sin valoraciones" if ordenadas[i][1] == -1 else f"{str(ordenadas[i][1])}/10"
+            valoracion = "Sin valoraciones" if ordenadas[i][1] == -1 else f"{notaSobreDiez(str(ordenadas[i][1]))}"
             valoracionNum = 0 if ordenadas[i][1] == -1 else ordenadas[i][1]
             txt += f'* {i+1}. {pintaEstrellas(float(ordenadas[i][1]))} **"{ordenadas[i][0][1]}"**. Nota media: **{valoracion}**.\n'
             i += 1
@@ -159,7 +159,7 @@ async def pintaRanking(ctx, pelis, estilo = 'Total', inicio = 0, message = None)
         i = 0
         while i < len(top3):
             valoracion = str(top3[i][1])
-            txt += f'{i+1}. {pintaEstrellas(float(top3[i][1]))} **"{top3[i][0][1]}"**: Nota media: **{top3[i][1]}/10**\n'
+            txt += f'{i+1}. {pintaEstrellas(float(top3[i][1]))} **"{top3[i][0][1]}"**: Nota media: **{notaSobreDiez(top3[i][1])}**\n'
             i += 1
         
         bot3 = ordenadasValoradas[-3:]
@@ -167,7 +167,7 @@ async def pintaRanking(ctx, pelis, estilo = 'Total', inicio = 0, message = None)
         i = len(bot3) - 1
         while i >= 0:
             valoracion = str(bot3[i][1])
-            txt += f'{3-i}. {pintaEstrellas(float(bot3[i][1]))} **"{bot3[i][0][1]}"**: Nota media: **{bot3[i][1]}/10**\n'
+            txt += f'{3-i}. {pintaEstrellas(float(bot3[i][1]))} **"{bot3[i][0][1]}"**: Nota media: **{notaSobreDiez(bot3[i][1])}**\n'
             i -= 1
         await enviarMensaje(ctx, txt)
     else:
@@ -204,3 +204,20 @@ async def reaccionaSegunNota(message, nota):
 
     if emoji != '':
         await message.add_reaction(emoji)
+
+
+def notaSobreDiez(nota):
+    if float(nota).is_integer():
+        return f'{int(float(nota))}/10'
+    else:
+        return f'{str(round(float(nota), 2))}/10'
+
+
+def esNumero(valor):
+    if valor is None:
+        return False
+    try:
+        float(str(valor).replace(',', '.').strip())
+        return True
+    except ValueError:
+        return False
