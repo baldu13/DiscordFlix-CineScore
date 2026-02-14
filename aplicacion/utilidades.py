@@ -201,14 +201,14 @@ async def gestionaMensaje(ctx, txt, numPag, maxPag, message):
 
 async def reaccionaSegunNota(message, nota):
     emoji = ''
-    match nota:
-        case '0' | '1' | '2' | '3' | '4':
+    match float(nota):
+        case t if float(nota) >= 0.0 and float(nota) < 5.0:
             emoji = '😬'
-        case '5' | '6':
+        case t if float(nota) >= 5.0 and float(nota) < 7.0:
             emoji = '🤔'
-        case '7' | '8':
+        case t if float(nota) >= 7.0 and float(nota) < 9.0:
             emoji = '😄'
-        case '9' | '10':
+        case t if float(nota) >= 9.0 and float(nota) <= 10.0:
             emoji = '🔥'
 
     if emoji != '':
