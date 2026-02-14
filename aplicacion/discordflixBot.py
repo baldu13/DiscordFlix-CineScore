@@ -62,10 +62,10 @@ async def on_command_error(ctx, error):
 async def _ayuda(ctx, *args):
 	txt = f'## {config.msg_presentacion}\n'
 	txt += f'\n### Comandos generales:\n'
-	txt += f'* {encuadrar}{prefijo}listado{encuadrar} Mostrar un listado de todas las películas, de más reciente a más antigua.\n'
+	txt += f'* {encuadrar}{prefijo}listado <página>{encuadrar} Mostrar un listado de todas las películas, de más reciente a más antigua.\n'
 	txt += f'* {encuadrar}{prefijo}top{encuadrar} Mostrar un ranking de las mejores y peores películas.\n'
-	txt += f'* {encuadrar}{prefijo}ranking{encuadrar} Mostrar el ranking de todas películas, por nota media.\n'
-	txt += f'* {encuadrar}{prefijo}miranking{encuadrar} Mostrar un ranking de las mejores y peores películas según valoración personal.\n'
+	txt += f'* {encuadrar}{prefijo}ranking <página>{encuadrar} Mostrar el ranking de todas películas, por nota media.\n'
+	txt += f'* {encuadrar}{prefijo}miranking <página>{encuadrar} Mostrar un ranking de las mejores y peores películas según valoración personal.\n'
 	txt += f'* {encuadrar}{prefijo}ultima{encuadrar} Mostrar información de la última película vista.\n'
 	txt += f'* {encuadrar}{prefijo}puntua [0-10]{encuadrar} Cuando haya un periodo de calificación abierto, permite aportar tu valoración de la misma (se permite hasta un decimal, por ejemplo {prefijo}puntua 7.5).\n'
 	txt += f'* {encuadrar}{prefijo}info [NombrePelicula]{encuadrar} Muestra la información de una película.\n'
@@ -73,7 +73,7 @@ async def _ayuda(ctx, *args):
 	txt2 += f'* {encuadrar}{prefijo}pelicula [Sesion] "[NombrePelicula]" "[URL Portada]" "<fecha>"{encuadrar} Crea una película para la sesión indicada, con el nombre indicado y opcionalmente para la fecha indicada, sino por defecto para la fecha actual. Por ejemplo: _{prefijo}pelicula 10 "Mi película" "https:www.urlImagen.com/img.jpg" "01-01-2026"_\n'
 	txt2 += f'* {encuadrar}{prefijo}abrir <NombrePelicula>{encuadrar} Abre el periodo de calificación para la película designada, o la última si no se indica nada.\n'
 	txt2 += f'* {encuadrar}{prefijo}cerrar{encuadrar} Cierra el periodo de calificación activo, en caso de haberlo.\n'
-	txt2 += f'* {encuadrar}{prefijo}editar [NombrePeliculaAnterior] [Sesion] "[NombrePelicula]" "[URL Portada]" "[fecha]"{encuadrar} Actualiza los datos de una película.\n'
+	txt2 += f'* {encuadrar}{prefijo}editar "[NombrePeliculaAnterior]" [Sesion] "[NombrePelicula]" "[URL Portada]" "<fecha>"{encuadrar} Actualiza los datos de una película.\n'
 	txt2 += f'* {encuadrar}{prefijo}eliminar [NombrePelicula]{encuadrar} Elimina la película y todas sus calificaciones.\n'
 	await enviarMensaje(ctx, txt)
 	if ctx.author.id in usuarios_admin:
@@ -229,7 +229,8 @@ async def _ultima(ctx, *args):
 async def _listado(ctx, *args):
 	peliculas = bd.recuperaPeliculas()
 	if len(args) == 1 and args[0].isnumeric():
-		await utilidades.pintaListado(ctx, peliculas, int(args[0]))
+		inicio = int(args[0]) * int(config.tam_pagina) - int(config.tam_pagina)
+		await utilidades.pintaListado(ctx, peliculas, inicio)
 	else:
 		await utilidades.pintaListado(ctx, peliculas, 0)
 
@@ -238,7 +239,11 @@ async def _listado(ctx, *args):
 @bot.command(name='ranking')
 async def _ranking(ctx, *args):
 	pelis = bd.recuperaPeliculas()
-	await utilidades.pintaRanking(ctx, pelis, 'Total')
+	if len(args) == 1 and args[0].isnumeric():
+		inicio = int(args[0]) * int(config.tam_pagina) - int(config.tam_pagina)
+		await utilidades.pintaRanking(ctx, pelis, 'Total', inicio)
+	else:
+		await utilidades.pintaRanking(ctx, pelis, 'Total')
 
 
 # Comando para ver un listado de las mejores y peores películas por valoración personal del usuario
@@ -247,7 +252,8 @@ async def _miranking(ctx, *args):
 	votosUsuario = bd.recuperaVotosUsuario(ctx.author.id)
 	autor = ctx.author
 	if len(args) == 1 and args[0].isnumeric():
-		await utilidades.pintaMiRanking(ctx, votosUsuario, autor, int(args[0]))
+		inicio = int(args[0]) * int(config.tam_pagina) - int(config.tam_pagina)
+		await utilidades.pintaMiRanking(ctx, votosUsuario, autor, inicio)
 	else:
 		await utilidades.pintaMiRanking(ctx, votosUsuario, autor)
 
@@ -305,20 +311,31 @@ async def _top(ctx, *args):
 @bot.event
 async def on_raw_reaction_add(payload):
 	
-	canal = bot.get_channel(payload.channel_id)
-	usuario = await bot.fetch_user(payload.user_id)
-	mensaje = await canal.fetch_message(payload.message_id)
-	ctx = await bot.get_context(mensaje)
-
 	# Evitar que el bot reaccione a sus propias reacciones
 	if payload.user_id == bot.user.id:
 		return
+
+	usuario = await bot.fetch_user(payload.user_id)
+	canal = None
+	if payload.guild_id is None:
+		# Es un DM
+		canal = usuario.dm_channel
+		if canal is None:
+			try:
+				canal = await usuario.create_dm()
+			except (discord.Forbidden, discord.HTTPException):
+				print(f'No se ha podido entablar conversación por DM con el usuario {usuario.display_name}. Posiblemente tenga los DM restringidos.');
+	else:
+		# Es un mensaje de canal
+		canal = bot.get_channel(payload.channel_id)
+	mensaje = canal and await canal.fetch_message(payload.message_id)
+	ctx = canal and await bot.get_context(mensaje)
 
 	# Solo reacciona a reacciones de sus propios menasjes
 	if mensaje.author.id != bot.user.id:
 		return
 
-	#Miramos que emoji ha sido para actuar en consecuencia
+	# Miramos que emoji ha sido para actuar en consecuencia
 	modIdx = 0
 	if str(payload.emoji) == config.pag_siguiente:
 		modIdx = 0
@@ -328,7 +345,7 @@ async def on_raw_reaction_add(payload):
 		# Emoji desconocido o sin función
 		return
 
-	if mensaje.content.startswith('## Lista de películas vistas en DiscordFlix:'):
+	if mensaje.content.startswith('## :clapper: Historial de sesiones de DiscordFlix'):
 		# Es el comando de listado, buscamos la página actual y subimos o bajamos una si corresponde
 		numPag = mensaje.content[mensaje.content.rfind(' ')+1:mensaje.content.rfind('/')]
 		inicio = int(int(numPag)*int(config.tam_pagina)) + modIdx
@@ -342,7 +359,7 @@ async def on_raw_reaction_add(payload):
 		usuarioMsg = await bot.fetch_user(idUsuario)
 		await utilidades.pintaMiRanking(ctx, bd.recuperaVotosUsuario(idUsuario), usuarioMsg, inicio, mensaje)
 
-	elif mensaje.content.startswith('## :projector: Películas vistas en DiscordFlix'):
+	elif mensaje.content.startswith('## :projector: Películas vistas en DiscordFlix, ordenadas por valoración de los usuarios'):
 		# Es el comando de ranking total, buscamos la página actual y subimos o bajamos una si corresponde
 		numPag = mensaje.content[mensaje.content.rfind(' ')+1:mensaje.content.rfind('/')]
 		inicio = int(int(numPag)*int(config.tam_pagina)) + modIdx

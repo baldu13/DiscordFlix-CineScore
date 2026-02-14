@@ -94,6 +94,7 @@ async def pintaInfo(ctx, peli):
 
 
 async def pintaListado(ctx, totalPeliculas, inicio = 0, message = None):
+    inicio = max(min(len(totalPeliculas)-config.tam_pagina, inicio), 0)
     fin = inicio + min(len(totalPeliculas)-int(inicio), config.tam_pagina)
     numPag = math.ceil(fin / config.tam_pagina)
     maxPag = math.ceil(len(totalPeliculas) / config.tam_pagina)
@@ -105,6 +106,7 @@ async def pintaListado(ctx, totalPeliculas, inicio = 0, message = None):
 
 
 async def pintaMiRanking(ctx, votosUsuario, autor, inicio = 0, message = None):
+    inicio = max(min(len(votosUsuario)-config.tam_pagina, inicio), 0)
     fin = inicio + min(len(votosUsuario)-int(inicio), config.tam_pagina)
     numPag = math.ceil(fin / config.tam_pagina)
     maxPag = math.ceil(len(votosUsuario) / config.tam_pagina)
@@ -117,6 +119,7 @@ async def pintaMiRanking(ctx, votosUsuario, autor, inicio = 0, message = None):
 
 async def pintaRanking(ctx, pelis, estilo = 'Total', inicio = 0, message = None):
     # Ordenamos las películas juntos con su calificación
+    inicio = max(min(len(pelis)-config.tam_pagina, inicio), 0)
     ordenadas = []
     while len(pelis) > 0:
         i = 0 # Indice actual de la iteracion
@@ -183,8 +186,14 @@ async def gestionaMensaje(ctx, txt, numPag, maxPag, message):
         mensaje = await message.edit(txt)
 
     # Limpiamos las reacciones anteriores y creamos las nuevas que correspondan
-    await mensaje.clear_reaction(config.pag_anterior)
-    await mensaje.clear_reaction(config.pag_siguiente)
+    if isinstance(mensaje.channel, discord.DMChannel):
+        # Por msg privado, solo puede eliminar sus propias reacciones
+        await mensaje.remove_reaction(config.pag_anterior, mensaje.author)
+        await mensaje.remove_reaction(config.pag_siguiente, mensaje.author)
+    else:
+        # Canal de servidor, puede eliminar todas
+        await mensaje.clear_reaction(config.pag_anterior)
+        await mensaje.clear_reaction(config.pag_siguiente)
     if numPag != 1:
         await mensaje.add_reaction(config.pag_anterior)
     if numPag != maxPag:
