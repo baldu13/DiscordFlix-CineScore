@@ -145,7 +145,6 @@ async def pintaRanking(ctx, pelis, estilo = 'Total', inicio = 0, message = None)
     if estilo == 'Total':
         # Si hay menos de 7 películas valoradas, pintamos todas en orden (las no valoradas al final)
         txt = "## :projector: Películas vistas en DiscordFlix, ordenadas por valoración de los usuarios:\n\n"
-        i = 0
         fin = inicio + min(len(ordenadas)-int(inicio), config.tam_pagina)
         numPag = math.ceil(fin / config.tam_pagina)
         maxPag = math.ceil(len(ordenadas) / config.tam_pagina)
@@ -153,7 +152,6 @@ async def pintaRanking(ctx, pelis, estilo = 'Total', inicio = 0, message = None)
             valoracion = "Sin valoraciones" if ordenadas[i][1] == -1 else f"{notaSobreDiez(str(ordenadas[i][1]))}"
             valoracionNum = 0 if ordenadas[i][1] == -1 else ordenadas[i][1]
             txt += f'* {i+1}. {pintaEstrellas(float(ordenadas[i][1]))} **"{ordenadas[i][0][1]}"**. Nota media: **{valoracion}**.\n'
-            i += 1
         await gestionaMensaje(ctx, txt, numPag, maxPag, message)
     elif estilo == 'Top':
         # Pintamos las 3 mejor valoradas y las 3 peor valoradas, pasando de las no valoradas
