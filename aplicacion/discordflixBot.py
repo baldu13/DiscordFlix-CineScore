@@ -4,6 +4,7 @@ from datetime import datetime
 import basededatos as bd
 import utilidades
 import config
+from random import randrange
 
 encuadrar = '`'
 prefijo = config.prefijo
@@ -75,6 +76,7 @@ async def _ayuda(ctx, *args):
 	txt2 += f'* {encuadrar}{prefijo}cerrar{encuadrar} Cierra el periodo de calificación activo, en caso de haberlo.\n'
 	txt2 += f'* {encuadrar}{prefijo}editar "[NombrePeliculaAnterior]" [Sesion] "[NombrePelicula]" "[URL Portada]" "<fecha>"{encuadrar} Actualiza los datos de una película.\n'
 	txt2 += f'* {encuadrar}{prefijo}eliminar [NombrePelicula]{encuadrar} Elimina la película y todas sus calificaciones.\n'
+	txt2 += f'* {encuadrar}{prefijo}aleatorio [NombrePelicula1], [NombrePelicula2], [NombrePelicula3], [NombrePelicula4]{encuadrar} Elije aleatoriamente una de las películas (separadas por ,).\n'
 	await enviarMensaje(ctx, txt)
 	if ctx.author.id in usuarios_admin:
 		await ctx.author.send(txt2)
@@ -301,6 +303,25 @@ async def _eliminar(ctx, *args):
 		print(f'El usuario {ctx.author.display_name}:{ctx.author.id} ha intentado ejecutar un comando de administración, pero no tiene los permisos necesarios.')
 		await enviarMensaje(ctx, msg_usuario_no_admin)
 
+# Comando para elegir una película aleatoria
+@bot.command(name='aleatorio')
+async def _aleatorio(ctx, *args):
+	if ctx.author.id in usuarios_admin:
+		if len(args) > 0:
+			parametros = ' '.join(map(str, args))
+			opciones = parametros.split(",")
+			elegida = opciones[randrange(len(opciones))].strip()
+			txt = ':game_die: **Desempate resuelto por DiscordFlix**\n\n'
+			txt += 'La encuesta ha terminado en empate, así que el destino ha hablado a través del bot oficial de DiscordFlix.\n\n'
+			txt += 'Entre las películas empatadas, la elegida aleatoriamente ha sido:\n\n'
+			txt += f':popcorn: **{elegida}**\n\n'
+			txt += f'La sala ya tiene veredicto. Nos vemos en <#{config.canalDiscordflix}>.\n'
+			await enviarMensaje(ctx, txt)
+		else:
+			await enviarMensaje(ctx, f'Uso: {encuadrar}{prefijo}aleatorio [NombrePelicula1][NombrePelicula2][NombrePelicula3][NombrePelicula4]{encuadrar}')
+	else:
+		print(f'El usuario {ctx.author.display_name}:{ctx.author.id} ha intentado ejecutar un comando de administración, pero no tiene los permisos necesarios.')
+		await enviarMensaje(ctx, msg_usuario_no_admin)
 
 # Comando para ver el top
 @bot.command(name='top')
