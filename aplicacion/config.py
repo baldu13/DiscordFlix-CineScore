@@ -30,3 +30,6 @@ pag_siguiente = "➡️"
 # Restringir las calificaciones a usuarios que posean un rol específico
 calificacionRestrictiva = True
 rolCalificador = 1021090746205479065
+
+# Canal donde se realizan las sesiones de DiscordFlix
+canalDiscordflix = 9999999999999999999
