@@ -48,6 +48,7 @@ async def on_message(message):
 		if message.content.startswith(f'{prefijo}aleatorio'):
 			argumentos = message.content.split()[1:]
 			await _aleatorio(ctx, *argumentos)
+			await message.delete()
 	else:
 		await bot.process_commands(message)
 
