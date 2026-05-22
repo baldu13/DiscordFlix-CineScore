@@ -45,6 +45,8 @@ async def on_message(message):
 			await _abrir(ctx, *ctx.args)
 		if message.content.startswith(f'{prefijo}cerrar'):
 			await _cerrar(ctx, *ctx.args)
+		if message.content.startswith(f'{prefijo}aleatorio'):
+			await _aleatorio(ctx, *ctx.args)
 	else:
 		await bot.process_commands(message)
 
@@ -322,7 +324,9 @@ async def _aleatorio(ctx, *args):
 	else:
 		print(f'El usuario {ctx.author.display_name}:{ctx.author.id} ha intentado ejecutar un comando de administración, pero no tiene los permisos necesarios.')
 		await enviarMensaje(ctx, msg_usuario_no_admin)
-
+	# Borramos el mensaje original que nos ha invocado para limpiar
+	await ctx.message.delete()
+	
 # Comando para ver el top
 @bot.command(name='top')
 async def _top(ctx, *args):
