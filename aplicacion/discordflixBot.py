@@ -33,22 +33,25 @@ bot = commands.Bot(command_prefix=prefijo, intents=intents)
 @bot.event
 async def on_message(message):
 	# Por defecto, Pycord hace esto internamente:
-  # if message.author.bot: return
-	if message.author.id == bot.user.id:
+	comandos_propios_permitidos = ["abrir", "cerrar", "aleatorio", "pelicula"]
+	commActual = message.content.split()[0][1:]
+	if message.author.id == bot.user.id and commActual not in comandos_propios_permitidos:
 		return # Para no procesar los mensajes de este mismo bot
 	# Para habilitar que un bot pueda ejecutar alguno de los comandos
 	if message.author.bot:
 		ctx = await bot.get_context(message)
+		argumentos = message.content.split()[1:]
 		if message.content == f'{prefijo}info':
-			await _info(ctx, *ctx.args)
+			await _info(ctx, *argumentos)
 		if message.content.startswith(f'{prefijo}abrir'):
-			await _abrir(ctx, *ctx.args)
+			await _abrir(ctx, *argumentos)
 		if message.content.startswith(f'{prefijo}cerrar'):
-			await _cerrar(ctx, *ctx.args)
+			await _cerrar(ctx, *argumentos)
 		if message.content.startswith(f'{prefijo}aleatorio'):
-			argumentos = message.content.split()[1:]
 			await _aleatorio(ctx, *argumentos)
 			await message.delete()
+		if message.content.startswith(f'{prefijo}pelicula'):
+			await _pelicula(ctx, *argumentos)
 	else:
 		await bot.process_commands(message)
 
