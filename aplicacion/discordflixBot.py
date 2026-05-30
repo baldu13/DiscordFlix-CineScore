@@ -5,6 +5,7 @@ import basededatos as bd
 import utilidades
 import config
 from random import randrange
+import shlex
 
 encuadrar = '`'
 prefijo = config.prefijo
@@ -41,6 +42,7 @@ async def on_message(message):
 	if message.author.bot:
 		ctx = await bot.get_context(message)
 		argumentos = message.content.split()[1:]
+		argumentos = shlex.split(argumentos)
 		if message.content == f'{prefijo}info':
 			await _info(ctx, *argumentos)
 		if message.content.startswith(f'{prefijo}abrir'):
