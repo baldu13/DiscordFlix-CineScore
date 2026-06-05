@@ -42,6 +42,7 @@ async def on_message(message):
 	if message.author.bot:
 		ctx = await bot.get_context(message)
 		argumentos = message.content.split()[1:]
+		argumentos = = ' '.join(map(str, argumentos))
 		argumentos = shlex.split(argumentos)
 		if message.content == f'{prefijo}info':
 			await _info(ctx, *argumentos)
